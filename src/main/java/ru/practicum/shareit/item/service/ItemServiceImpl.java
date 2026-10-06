@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -47,7 +48,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                                   .orElseThrow(() -> new NotFoundException("Вещь с ID: " + itemId + " не найдена"));
         if (!item.getOwner().getId().equals(userId)) {
-            throw new ValidationException("У предмета не верный владелец");
+            throw new ForbiddenException("У предмета не верный владелец");
         }
         if (itemDto.getName() != null) {
             if (itemDto.getName().isBlank()) {
