@@ -12,7 +12,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class ItemServiceImpl implements ItemService {
@@ -84,8 +83,7 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> findAll(Long userId) {
         userRepository.findById(userId)
                       .orElseThrow(() -> new NotFoundException("Пользователь с ID: " + userId + " не найден"));
-        return itemRepository.findAll().stream()
-                .filter(item -> item.getOwner().getId().equals(userId))
+        return itemRepository.findByOwner_Id(userId).stream()
                 .map(ItemMapper::toDto)
                 .toList();
     }
@@ -95,11 +93,8 @@ public class ItemServiceImpl implements ItemService {
         if (text == null || text.isBlank()) {
             return List.of();
         }
-        String normalizedText = text.trim().toLowerCase(Locale.ROOT);
-        return itemRepository.findAll().stream()
-                             .filter(Item::isAvailable)
-                             .filter(item -> item.getName().toLowerCase(Locale.ROOT).contains(normalizedText)
-                                     || item.getDescription().toLowerCase(Locale.ROOT).contains(normalizedText))
+        String normalizedText = text.trim();
+        return itemRepository.searchByText(normalizedText).stream()
                              .map(ItemMapper::toDto)
                              .toList();
     }

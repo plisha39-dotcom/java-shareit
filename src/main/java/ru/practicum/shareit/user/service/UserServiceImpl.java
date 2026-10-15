@@ -27,8 +27,7 @@ public class UserServiceImpl implements UserService {
         if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
             throw new ValidationException("Email отсутствует");
         }
-        boolean emailExists = repository.findAll().stream()
-                                        .anyMatch(u -> u.getEmail().equals(userDto.getEmail()));
+        boolean emailExists = repository.existsByEmail(userDto.getEmail());
         if (emailExists) {
             throw new ConflictException("Пользователь с таким Email уже существует");
         }
@@ -45,9 +44,7 @@ public class UserServiceImpl implements UserService {
             if (userDto.getEmail().isBlank()) {
                 throw new ValidationException("Email отсутствует");
             }
-            boolean emailExists = repository.findAll().stream()
-                                            .anyMatch(u -> u.getEmail().equals(userDto.getEmail()) &&
-                                                    !u.getId().equals(userId));
+            boolean emailExists = repository.existsByEmailAndIdNot(userDto.getEmail(), userId);
             if (emailExists) {
                 throw new ConflictException("Пользователь с таким Email уже существует");
             }
@@ -85,6 +82,6 @@ public class UserServiceImpl implements UserService {
     public void delete(Long userId) {
         repository.findById(userId)
                               .orElseThrow(() -> new NotFoundException("Пользователь с ID: " + userId + " не найден"));
-        repository.delete(userId);
+        repository.deleteById(userId);
     }
 }
