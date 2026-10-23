@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -32,6 +33,7 @@ public class CommentServiceImpl implements CommentService {
         this.bookingRepository = bookingRepository;
     }
 
+    @Transactional
     @Override
     public CommentDto create(CommentCreateDto commentCreateDto, Long userId, Long itemId) {
         User user = userRepository.findById(userId)

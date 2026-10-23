@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingState;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
@@ -31,6 +32,7 @@ public class BookingServiceImpl implements BookingService {
         this.itemRepository = itemRepository;
     }
 
+    @Transactional
     @Override
     public BookingDto create(BookingCreateDto bookingCreateDto, Long userId) {
         User user = userRepository.findById(userId)
@@ -54,6 +56,7 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toDto(savedBooking);
     }
 
+    @Transactional
     @Override
     public BookingDto confirmation(Long bookingId, Long userId, boolean approved) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -76,6 +79,7 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toDto(savedBooking);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public BookingDto findById(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -90,6 +94,7 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toDto(booking);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<BookingDto> findByUserId(Long userId, BookingState state) {
         if (!userRepository.existsById(userId)) {
@@ -111,6 +116,7 @@ public class BookingServiceImpl implements BookingService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<BookingDto> findByOwner(Long userId, BookingState state) {
         if (!userRepository.existsById(userId)) {
