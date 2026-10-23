@@ -20,6 +20,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -92,10 +93,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                                   .orElseThrow(() -> new NotFoundException("Вещь с ID: " + itemId + " не найдена"));
         ItemDto itemDto = ItemMapper.toDto(item);
-        List<Comment> comments = commentRepository.findByItem_Id(itemId);
-        List<CommentDto> commentDtos = comments.stream()
-                                               .map(CommentMapper::toDto)
-                                               .toList();
+        List<CommentDto> commentDtos = findCommentDtosByItemId(itemId);
         itemDto.setComments(commentDtos);
         return itemDto;
     }
@@ -112,33 +110,16 @@ public class ItemServiceImpl implements ItemService {
                                  Optional<Booking> lastBooking = bookingRepository
                                          .findFirstByItem_IdAndEndBeforeAndStatusOrderByEndDesc(itemId, now, Status.APPROVED);
                                  ItemBookingDto lastBookingDto =
-                                         lastBooking.map(booking -> {
-                                                        ItemBookingDto bookingDto = new ItemBookingDto();
-                                                        Long id = booking.getId();
-                                                        Long bookerId = booking.getBooker().getId();
-                                                        bookingDto.setId(id);
-                                                        bookingDto.setBookerId(bookerId);
-                                                        return bookingDto;
-                                                    })
+                                         lastBooking.map(ItemMapper::toItemBookingDto)
                                                     .orElse(null);
                                  itemDto.setLastBooking(lastBookingDto);
                                  Optional<Booking> nextBooking = bookingRepository
                                          .findFirstByItem_IdAndStartAfterAndStatusOrderByStartAsc(itemId, now, Status.APPROVED);
                                  ItemBookingDto nextBookingDto =
-                                         nextBooking.map(booking -> {
-                                                        ItemBookingDto bookingDto = new ItemBookingDto();
-                                                        Long id = booking.getId();
-                                                        Long bookerId = booking.getBooker().getId();
-                                                        bookingDto.setId(id);
-                                                        bookingDto.setBookerId(bookerId);
-                                                        return bookingDto;
-                                                    })
+                                         nextBooking.map(ItemMapper::toItemBookingDto)
                                                     .orElse(null);
                                  itemDto.setNextBooking(nextBookingDto);
-                                 List<Comment> comments = commentRepository.findByItem_Id(itemId);
-                                 List<CommentDto> commentDtos = comments.stream()
-                                                                        .map(CommentMapper::toDto)
-                                                                        .toList();
+                                 List<CommentDto> commentDtos = findCommentDtosByItemId(itemId);
                                  itemDto.setComments(commentDtos);
                                  return itemDto;
                              })
@@ -154,5 +135,13 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository.searchByText(normalizedText).stream()
                              .map(ItemMapper::toDto)
                              .toList();
+    }
+
+    private List<CommentDto> findCommentDtosByItemId(Long itemId) {
+        List<Comment> comments = commentRepository.findByItem_Id(itemId);
+        List<CommentDto> commentDtos = comments.stream()
+                                               .map(CommentMapper::toDto)
+                                               .toList();
+        return commentDtos;
     }
 }
