@@ -1,6 +1,7 @@
 package ru.practicum.shareit.user.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -19,6 +20,7 @@ public class UserServiceImpl implements UserService {
         this.repository = userRepository;
     }
 
+    @Transactional
     @Override
     public UserDto create(UserDto userDto) {
         if (userDto.getName() == null || userDto.getName().isBlank()) {
@@ -27,8 +29,7 @@ public class UserServiceImpl implements UserService {
         if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
             throw new ValidationException("Email отсутствует");
         }
-        boolean emailExists = repository.findAll().stream()
-                                        .anyMatch(u -> u.getEmail().equals(userDto.getEmail()));
+        boolean emailExists = repository.existsByEmail(userDto.getEmail());
         if (emailExists) {
             throw new ConflictException("Пользователь с таким Email уже существует");
         }
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDto(savedUser);
     }
 
+    @Transactional
     @Override
     public UserDto update(UserDto userDto, Long userId) {
         User user = repository.findById(userId)
@@ -45,9 +47,7 @@ public class UserServiceImpl implements UserService {
             if (userDto.getEmail().isBlank()) {
                 throw new ValidationException("Email отсутствует");
             }
-            boolean emailExists = repository.findAll().stream()
-                                            .anyMatch(u -> u.getEmail().equals(userDto.getEmail()) &&
-                                                    !u.getId().equals(userId));
+            boolean emailExists = repository.existsByEmailAndIdNot(userDto.getEmail(), userId);
             if (emailExists) {
                 throw new ConflictException("Пользователь с таким Email уже существует");
             }
@@ -67,6 +67,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDto(savedUser);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public UserDto findById(Long userId) {
         User user = repository.findById(userId)
@@ -74,6 +75,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toDto(user);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<UserDto> findAll() {
         return repository.findAll().stream()
@@ -81,10 +83,11 @@ public class UserServiceImpl implements UserService {
                          .toList();
     }
 
+    @Transactional
     @Override
     public void delete(Long userId) {
         repository.findById(userId)
                               .orElseThrow(() -> new NotFoundException("Пользователь с ID: " + userId + " не найден"));
-        repository.delete(userId);
+        repository.deleteById(userId);
     }
 }
