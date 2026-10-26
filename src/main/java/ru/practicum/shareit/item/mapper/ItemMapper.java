@@ -29,6 +29,8 @@ public class ItemMapper {
         Long bookerId = booking.getBooker().getId();
         bookingDto.setId(id);
         bookingDto.setBookerId(bookerId);
+        bookingDto.setStart(booking.getStart());
+        bookingDto.setEnd(booking.getEnd());
         return bookingDto;
     }
 }

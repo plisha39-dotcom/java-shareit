@@ -11,4 +11,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @EntityGraph(attributePaths = "author")
     List<Comment> findByItem_IdIn(List<Long> itemIds);
+
+    boolean existsByAuthor_Id(Long authorId);
 }

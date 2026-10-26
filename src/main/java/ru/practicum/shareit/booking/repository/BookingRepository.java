@@ -1,6 +1,8 @@
 package ru.practicum.shareit.booking.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.model.Booking;
 
@@ -34,4 +36,40 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             Long itemId, Long authorId, Status status, LocalDateTime now);
 
     List<Booking> findByItem_IdIn(List<Long> itemIds);
+
+    @Query(value = """
+                        SELECT *
+            FROM (
+                SELECT id, item_id, booker_id, start_date, end_date, status,
+                ROW_NUMBER() OVER (
+                PARTITION BY item_id
+                ORDER BY end_date DESC
+            ) AS rn
+            FROM bookings
+            WHERE status = 'APPROVED'
+              AND end_date < NOW()
+              AND item_id IN (:itemIds)
+            ) AS ranked_bookings
+            WHERE rn = 1
+            """,  nativeQuery = true)
+    List<Booking> findByLastBooking(@Param("itemIds") List<Long> itemIds);
+
+    @Query(value = """
+                        SELECT *
+            FROM (
+                SELECT id, item_id, booker_id, start_date, end_date, status,
+                ROW_NUMBER() OVER (
+                PARTITION BY item_id
+                ORDER BY start_date ASC
+            ) AS rn
+            FROM bookings
+            WHERE status = 'APPROVED'
+              AND start_date > NOW()
+              AND item_id IN (:itemIds)
+            ) AS ranked_bookings
+            WHERE rn = 1
+            """,  nativeQuery = true)
+    List<Booking> findByNextBooking(@Param("itemIds") List<Long> itemIds);
+
+    boolean existsByBooker_Id(Long bookerId);
 }

@@ -17,4 +17,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
         (LOWER(i.name) LIKE CONCAT('%', LOWER(:text) ,'%') OR LOWER(i.description) LIKE CONCAT('%', LOWER(:text) ,'%'))
     """)
     List<Item> searchByText(@Param("text") String text);
+
+    boolean existsByOwner_Id(Long ownerId);
 }
