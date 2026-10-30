@@ -16,6 +16,8 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.RequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
@@ -33,13 +35,16 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final RequestRepository requestRepository;
 
     public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository,
-                           BookingRepository bookingRepository, CommentRepository commentRepository) {
+                           BookingRepository bookingRepository, CommentRepository commentRepository,
+                           RequestRepository requestRepository) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
         this.commentRepository = commentRepository;
+        this.requestRepository = requestRepository;
     }
 
     @Transactional
@@ -58,6 +63,12 @@ public class ItemServiceImpl implements ItemService {
         }
         Item item = ItemMapper.toItem(itemDto);
         item.setOwner(user);
+        Long requestId = itemDto.getRequestId();
+        if (requestId != null) {
+            ItemRequest request = requestRepository.findById(requestId)
+                    .orElseThrow(() -> new NotFoundException("Запрос " + requestId + " не найден"));
+            item.setRequest(request);
+        }
         Item savedItem = itemRepository.save(item);
         return ItemMapper.toDto(savedItem);
     }
