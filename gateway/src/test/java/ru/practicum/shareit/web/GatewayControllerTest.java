@@ -270,6 +270,160 @@ class GatewayControllerTest {
         verifyNoInteractions(bookings);
     }
 
+    @Test
+    void invalidBookingStateReturns400() throws Exception {
+        mvc.perform(get("/bookings")
+                   .header("X-Sharer-User-Id", 5)
+                   .param("state", "INVALID"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(bookings);
+    }
+
+    @Test
+    void invalidOwnerBookingStateReturns400() throws Exception {
+        mvc.perform(get("/bookings/owner")
+                   .header("X-Sharer-User-Id", 5)
+                   .param("state", "INVALID"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(bookings);
+    }
+
+    @Test
+    void missingBookingStartReturns400() throws Exception {
+        mvc.perform(post("/bookings")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content("{\"itemId\":9,\"end\":\"2035-01-02T12:00:00\"}"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(bookings);
+    }
+
+    @Test
+    void nullBookingEndReturns400() throws Exception {
+        mvc.perform(post("/bookings")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content("{\"itemId\":9,\"start\":\"2035-01-01T12:00:00\",\"end\":null}"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(bookings);
+    }
+
+    @Test
+    void itemNameWith255CharactersIsAllowed() throws Exception {
+        given(items.create(any(ItemCreateDto.class), eq(5L))).willReturn(ok());
+        mvc.perform(post("/items")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(itemJson("x".repeat(255), "Tool")))
+           .andExpect(status().isOk());
+    }
+
+    @Test
+    void itemNameWith256CharactersIsRejected() throws Exception {
+        mvc.perform(post("/items")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(itemJson("x".repeat(256), "Tool")))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(items);
+    }
+
+    @Test
+    void itemDescriptionWith512CharactersIsAllowed() throws Exception {
+        given(items.create(any(ItemCreateDto.class), eq(5L))).willReturn(ok());
+        mvc.perform(post("/items")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(itemJson("Drill", "x".repeat(512))))
+           .andExpect(status().isOk());
+    }
+
+    @Test
+    void itemDescriptionWith513CharactersIsRejected() throws Exception {
+        mvc.perform(post("/items")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(itemJson("Drill", "x".repeat(513))))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(items);
+    }
+
+    @Test
+    void itemPatchRejectsNameAboveLimit() throws Exception {
+        mvc.perform(patch("/items/9")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content("{\"name\":\"" + "x".repeat(256) + "\"}"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(items);
+    }
+
+    @Test
+    void itemPatchRejectsDescriptionAboveLimit() throws Exception {
+        mvc.perform(patch("/items/9")
+                   .header("X-Sharer-User-Id", 5)
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content("{\"description\":\"" + "x".repeat(513) + "\"}"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(items);
+    }
+
+    @Test
+    void userNameWith255CharactersIsAllowed() throws Exception {
+        given(users.create(any(UserDto.class))).willReturn(ok());
+        mvc.perform(post("/users")
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(userJson("x".repeat(255), "person@example.com")))
+           .andExpect(status().isOk());
+    }
+
+    @Test
+    void userNameWith256CharactersIsRejected() throws Exception {
+        mvc.perform(post("/users")
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(userJson("x".repeat(256), "person@example.com")))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(users);
+    }
+
+    @Test
+    void userEmailAboveLimitIsRejected() throws Exception {
+        String email = "a".repeat(508) + "@e.co";
+        mvc.perform(post("/users")
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content(userJson("Alice", email)))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(users);
+    }
+
+    @Test
+    void userPatchRejectsNameAboveLimit() throws Exception {
+        mvc.perform(patch("/users/12")
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content("{\"name\":\"" + "x".repeat(256) + "\"}"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(users);
+    }
+
+    @Test
+    void userPatchRejectsEmailAboveLimit() throws Exception {
+        String email = "a".repeat(508) + "@e.co";
+        mvc.perform(patch("/users/12")
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .content("{\"email\":\"" + email + "\"}"))
+           .andExpect(status().isBadRequest());
+        verifyNoInteractions(users);
+    }
+
+    private String itemJson(String name, String description) {
+        return "{\"name\":\"" + name + "\",\"description\":\"" + description
+                + "\",\"available\":true}";
+    }
+
+    private String userJson(String name, String email) {
+        return "{\"name\":\"" + name + "\",\"email\":\"" + email + "\"}";
+    }
+
     private ResponseEntity<Object> ok() {
         return ResponseEntity.ok(Map.of("ok", true));
     }
